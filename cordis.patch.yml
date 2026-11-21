@@ -1,0 +1,16 @@
+# Every value below is a tunable default: edit this row (or override it in the
+# profile's own cordis.patch.yml) instead of the plugin source.
+- insert:
+    - id: solution-ledger
+      name: '@local/dsh-solution-ledger'
+      config:
+        # Surface a matching confirmed entry when a tool call fails.
+        pushOnToolError: true
+        # Minimum relevance score before an automatic note is attached.
+        pushMinScore: 4
+        # Hard ceiling; the oldest archived entries are dropped past this.
+        maxEntries: 2000
+        # Entries untouched for this many days are archived out of search.
+        archiveAfterDays: 90
+        # Absolute path for the JSON store. Empty uses $DSH_HOME/solution-ledger.json.
+        statePath: ''

@@ -1,0 +1,7 @@
+{
+  "meta": {
+    "title": "Solution ledger",
+    "description": "Records troubleshooting fixes and design decisions in one global ledger, searches it before debugging starts, and surfaces a matching confirmed entry when a tool call fails.",
+    "detail": "README.md"
+  }
+}

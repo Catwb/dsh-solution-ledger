@@ -1,0 +1,36 @@
+{
+  "name": "@local/dsh-solution-ledger",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Global problem-solving ledger: records troubleshooting and design decisions, searches them before debugging, and surfaces a matching entry when a tool fails. Managed from a sidebar drawer.",
+  "main": "./lib/index.js",
+  "exports": {
+    ".": "./lib/index.js",
+    "./client": "./lib/client.js",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib/index.js",
+    "lib/store.js",
+    "lib/search.js",
+    "lib/client.js",
+    "cordis.patch.yml",
+    "locale/*.json",
+    "icon.svg",
+    "README.md"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "inject": [
+        "@deepseek-ai/dsh-client-ui-sidebar"
+      ]
+    }
+  }
+}
