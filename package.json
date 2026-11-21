@@ -1,7 +1,6 @@
 {
   "name": "@catwb/dsh-solution-ledger",
   "version": "0.1.0",
-  "private": true,
   "license": "MIT",
   "type": "module",
   "description": "Global problem-solving ledger: records troubleshooting and design decisions, searches them before debugging, and surfaces a matching entry when a tool fails. Managed from a sidebar drawer.",
@@ -23,6 +22,9 @@
     "icon.svg",
     "README.md"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "dsh": {
     "bundle": {
       "patch": "./cordis.patch.yml"
