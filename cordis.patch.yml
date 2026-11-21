@@ -2,7 +2,7 @@
 # profile's own cordis.patch.yml) instead of the plugin source.
 - insert:
     - id: solution-ledger
-      name: '@catwb/dsh-solution-ledger'
+      name: 'dsh-solution-ledger'
       config:
         # Surface a matching confirmed entry when a tool call fails.
         pushOnToolError: true

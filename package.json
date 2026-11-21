@@ -1,5 +1,5 @@
 {
-  "name": "@catwb/dsh-solution-ledger",
+  "name": "dsh-solution-ledger",
   "version": "0.1.0",
   "license": "MIT",
   "type": "module",

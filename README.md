@@ -29,11 +29,11 @@ git clone https://github.com/Catwb/dsh-solution-ledger.git
 ```json
 {
   "dependencies": {
-    "@catwb/dsh-solution-ledger": "link:<你 clone 的绝对路径>"
+    "dsh-solution-ledger": "link:<你 clone 的绝对路径>"
   },
   "dsh": {
     "profile": {
-      "bundles": ["@catwb/dsh-solution-ledger"]
+      "bundles": ["dsh-solution-ledger"]
     }
   }
 }
