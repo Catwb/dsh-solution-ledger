@@ -85,3 +85,7 @@ Host 半为此注册了三条路由：`GET /solution-ledger/list`、`POST /solut
 - **没有 UI。** 确认草稿需要让模型调 `solution_log` 带上 `status: "confirmed"`，或直接改 JSON 文件。
 - **单进程。** 存储是本地文件，两个 DSH 进程同时写会互相覆盖。
 - **`decision` 类不做自动推送。** 选技术路线不产生错误事件，这类条目只能靠 `solution_search` 主动查。
+
+## 许可证
+
+MIT，见 [LICENSE](LICENSE)。
