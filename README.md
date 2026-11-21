@@ -8,13 +8,27 @@
 
 ## 安装
 
+### 从 npm 安装（推荐）
+
+```bash
+npm i dsh-solution-ledger
+```
+
+或直接让 DSH 装上并启用：
+
+```bash
+dsh plugin --profile <profile 名> add dsh-solution-ledger
+```
+
+也可以打开 Web 的 **Plugins** 页面，点 Add，填 `dsh-solution-ledger`。
+
 ### 从 GitHub 安装
 
 ```bash
 dsh plugin --profile <profile 名> add github:Catwb/dsh-solution-ledger
 ```
 
-也可以打开 Web 的 **Plugins** 页面，点 Add，填 `github:Catwb/dsh-solution-ledger`。
+适合想跟最新提交的场合；npm 上的版本更稳。
 
 安装后侧边栏顶部图标排会多出一个账本图标。修改插件代码后，在 Plugins 页面关掉再打开以重新加载 Host 半；浏览器端还需要刷新页面。
 
