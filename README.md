@@ -109,7 +109,7 @@ Host 半为此注册了三条路由：`GET /solution-ledger/list`、`POST /solut
 | 键 | 默认 | 说明 |
 |---|---|---|
 | `pushOnToolError` | `true` | 工具失败时是否自动推送匹配条目 |
-| `pushMinScore` | `4` | 自动推送的最低相关度 |
+| `pushMinScore` | `12` | 自动推送的最低相关度。低于它的匹配不打扰模型 |
 | `maxEntries` | `2000` | 硬上限；超出后按更新时间删除最旧的**已归档**条目 |
 | `archiveAfterDays` | `90` | 超过这么多天未被命中的条目移出检索（不删除） |
 | `statePath` | `''` | 空则用 `$DSH_HOME/solution-ledger.json` |

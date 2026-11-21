@@ -7,7 +7,7 @@
         # Surface a matching confirmed entry when a tool call fails.
         pushOnToolError: true
         # Minimum relevance score before an automatic note is attached.
-        pushMinScore: 4
+        pushMinScore: 12
         # Hard ceiling; the oldest archived entries are dropped past this.
         maxEntries: 2000
         # Entries untouched for this many days are archived out of search.
