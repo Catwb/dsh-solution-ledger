@@ -12,5 +12,8 @@
         maxEntries: 2000
         # Entries untouched for this many days are archived out of search.
         archiveAfterDays: 90
+        # An unreviewed draft nobody ever searched for is archived after this
+        # many days, so stray implementation notes do not pile up.
+        draftArchiveAfterDays: 30
         # Absolute path for the JSON store. Empty uses $DSH_HOME/solution-ledger.json.
         statePath: ''

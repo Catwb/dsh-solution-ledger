@@ -75,6 +75,8 @@ git clone https://github.com/Catwb/dsh-solution-ledger.git
 
 换句话说：**如果一条记录永远不会出现在报错里、也不会改变任何人下一步的决定，那它是日志，不是账本条目。**
 
+写进去的草稿如果 30 天内**从未被任何检索或推送命中**，会自动归档（`draftArchiveAfterDays`）——即使模型偶尔写进一条实现说明，没人用的小记录也会自己沉底，不必手动清理。归档不等于删除：条目仍在文件里，可在界面里「取消归档」恢复。
+
 | 参数 | 必填 | 说明 |
 |---|---|---|
 | `kind` | 是 | `troubleshoot`（修好的故障）或 `decision`（选定/否决的路线） |
@@ -140,6 +142,7 @@ Host 半为此注册了三条路由：`GET /solution-ledger/list`、`POST /solut
 | `pushMinScore` | `12` | 自动推送的最低相关度。低于它的匹配不打扰模型 |
 | `maxEntries` | `2000` | 硬上限；超出后按更新时间删除最旧的**已归档**条目 |
 | `archiveAfterDays` | `90` | 超过这么多天未被命中的条目移出检索（不删除） |
+| `draftArchiveAfterDays` | `30` | 草稿且**从未被命中**，超过这么多天自动归档（不删除） |
 | `statePath` | `''` | 空则用 `$DSH_HOME/solution-ledger.json` |
 
 ## 限制
