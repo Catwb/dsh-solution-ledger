@@ -6,6 +6,41 @@
 
 会话是独立的，坑却反复踩。这个插件把「症状 → 根因 → 解法 → 怎么验证」沉淀成跨会话可检索的条目，并且**不靠模型自觉去查**：只要一个工具调用失败，插件会拿报错原文去匹配账本，命中已确认条目时直接把摘要附在这次失败结果里，模型在同一个 step 就看到了。
 
+## 安装
+
+### 从 GitHub 安装
+
+```bash
+dsh plugin --profile <profile 名> add github:Catwb/dsh-solution-ledger
+```
+
+也可以打开 Web 的 **Plugins** 页面，点 Add，填 `github:Catwb/dsh-solution-ledger`。
+
+安装后侧边栏顶部图标排会多出一个账本图标。修改插件代码后，在 Plugins 页面关掉再打开以重新加载 Host 半；浏览器端还需要刷新页面。
+
+### 本地开发
+
+```bash
+git clone https://github.com/Catwb/dsh-solution-ledger.git
+```
+
+在你的 profile 的 `package.json` 里加两条，然后在该目录执行 `pnpm install`：
+
+```json
+{
+  "dependencies": {
+    "@catwb/dsh-solution-ledger": "link:<你 clone 的绝对路径>"
+  },
+  "dsh": {
+    "profile": {
+      "bundles": ["@catwb/dsh-solution-ledger"]
+    }
+  }
+}
+```
+
+这个插件不依赖任何第三方包，`node_modules` 里只有它自己，所以上面两条就够了。
+
 ## 两个工具
 
 ### `solution_log`
