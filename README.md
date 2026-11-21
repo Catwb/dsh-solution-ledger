@@ -148,7 +148,7 @@ Host 半为此注册了三条路由：`GET /solution-ledger/list`、`POST /solut
 ## 限制
 
 - **没有语义检索。** 匹配基于词元与子串，靠的是 `signals` 写得准。写得越像真实报错，命中率越高。
-- **没有 UI。** 确认草稿需要让模型调 `solution_log` 带上 `status: "confirmed"`，或直接改 JSON 文件。
+- **界面不能新建条目。** 侧边栏面板可以查看、编辑、确认、弃用、归档和删除，但新增条目必须走 `solution_log`。
 - **单进程。** 存储是本地文件，两个 DSH 进程同时写会互相覆盖。
 - **`decision` 类不做自动推送。** 选技术路线不产生错误事件，这类条目只能靠 `solution_search` 主动查。
 
