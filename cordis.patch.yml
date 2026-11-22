@@ -17,3 +17,28 @@
         draftArchiveAfterDays: 30
         # Absolute path for the JSON store. Empty uses $DSH_HOME/solution-ledger.json.
         statePath: ''
+        # Offer an update check in the panel. The check only reports; it never
+        # installs, because replacing this package would unload the plugin
+        # serving the request.
+        updateCheck: true
+        # How long a checked answer is reused. Keep this short: a long window
+        # reproduces the "already up to date" lie the check exists to avoid.
+        updateCheckTtlMs: 300000
+        # Per-request deadline for one registry lookup, in milliseconds.
+        updateCheckTimeoutMs: 8000
+        # Package to ask about. Change it only when forking under another name.
+        updateCheckPackage: 'dsh-solution-ledger'
+        # Authoritative source, asked first. A publish reaches npmjs before any
+        # mirror, so this is the only source that can see a fresh release.
+        updateCheckRegistry: 'https://registry.npmjs.org'
+        # Mirror to compare against. It is reported as lagging when it is
+        # behind, which is usually why an install says the version is missing,
+        # and why DSH's own version list shows nothing new. Empty disables it.
+        updateCheckMirror: 'https://registry.npmmirror.com'
+        # Save the running version before sending the user to the Plugins page.
+        # updateBundle refuses to go backwards, so this copy is the only local
+        # way back from a broken release.
+        backupOnUpdate: true
+        # Where rollback copies go. Empty uses $DSH_HOME/solution-ledger-backups.
+        # Each copy is a complete installable package.
+        backupPath: ''

@@ -130,7 +130,48 @@ git clone https://github.com/Catwb/dsh-solution-ledger.git
 - 状态操作：**确认**（草稿 → 已确认，只有确认过的才会参与自动推送）、退回草稿、弃用、归档、删除
 - 顶部显示总数与各状态计数，底部显示存储文件的实际路径
 
-Host 半为此注册了三条路由：`GET /solution-ledger/list`、`POST /solution-ledger/update`、`POST /solution-ledger/delete`。
+Host 半为此注册了六条路由：`GET /solution-ledger/list`、`POST /solution-ledger/update`、`POST /solution-ledger/delete`、`GET /solution-ledger/update-check`、`POST /solution-ledger/backup`、`GET /solution-ledger/backups`。
+
+## 更新检查
+
+面板打开时会查一次自己有没有新版本。查到就在顶部显示一条提示，点**去更新**跳到 **Plugins** 页里这个插件的详情页，用那里的 **Update** 完成安装。插件自己**不装**——`updateBundle` 会先卸载旧版再装新版，而承载这个请求的正是被卸载的那个插件，中途断线是必然的。跳转过去用 DSH 原生的确认框、进度和失败回滚，比自己实现一遍可靠。
+
+### 为什么不用 DSH 自带的版本列表
+
+`pluginManager.listVersions()` 底层跑 `pnpm view`，问的是 **pnpm 配置的 registry**。中国大陆的 `pnpm` 默认指向 `registry.npmmirror.com`，而镜像同步滞后：
+
+| 源 | `dsh-solution-ledger` 的 latest |
+|---|---|
+| `registry.npmjs.org` | 0.2.3 |
+| `registry.npmmirror.com` | 0.2.2 |
+
+当时镜像上 `0.2.3` 的元数据和 tarball **都是 404**，加 `?t=` 时间戳、发 `no-cache` 都没用——不是 HTTP 缓存，是镜像服务端还没同步。所以刚发完版的这段时间里，走镜像的检查一律回答「已是最新」，这正是最需要看到新版本的时候。
+
+于是这里：**官方源先查，镜像作对照**。两边都答上来且镜像落后时，提示里会直接写出 `npmjs v0.2.4 / npmmirror v0.2.3` 并提醒安装时把源切到 `registry.npmjs.org`，否则 Plugins 页会因为镜像拿不到这个版本而报错。
+
+### 更新前的两道闸
+
+点**去更新**不会立刻跳走，中间有两步，任何一步不过就不放行：
+
+**第一道：源真的能下载吗。** `dist-tags` 里有版本号，不等于 tarball 拿得到——镜像上就出现过 tag 有、文件 404 的情况。所以对目标版本发一次带 `Range: bytes=0-0` 的 GET，官方源和镜像各问一遍，拿到真实状态码（`200` / `206` 算可用）。**所有源都取不到就拒绝跳转**，因为这时的更新会变成「卸载了旧版却没东西可装」，比不更新糟得多。面板上会直接显示每个源的实测状态，例如：
+
+```
+源状态 · registry.npmjs.org 206 / registry.npmmirror.com 404
+```
+
+**第二道：旧版留了底吗。** 跳转前把当前正在跑的包目录整个复制到 `$DSH_HOME/solution-ledger-backups/<版本>-<时间戳>/`，排除 `node_modules` 和 `.git`。`updateBundle` 只升不降，发布的版本也可能本身就是坏的，没有这份副本就没有本地退路。
+
+备份目录**本身就是一个完整可安装的包**，所以回退只有一条命令：
+
+```bash
+dsh plugin --profile <profile> 名 add file:<备份目录>
+```
+
+目录里还写了 `backup.json`（版本、时间、文件数、来源）和 `RESTORE.md`（回退步骤，link 安装的情况给出 `git checkout` 的做法）。备份失败时会弹确认框问是否仍然继续，默认不继续。
+
+### 缓存
+
+一次检查结果复用 `updateCheckTtlMs`（默认 5 分钟）。刻意设得很短：窗口一长，「检查更新」就会退化成它本来要解决的谎话。**重新检查**按钮带 `?force=1`，直接绕过缓存。
 
 ## 配置
 
@@ -144,6 +185,14 @@ Host 半为此注册了三条路由：`GET /solution-ledger/list`、`POST /solut
 | `archiveAfterDays` | `90` | 超过这么多天未被命中的条目移出检索（不删除） |
 | `draftArchiveAfterDays` | `30` | 草稿且**从未被命中**，超过这么多天自动归档（不删除） |
 | `statePath` | `''` | 空则用 `$DSH_HOME/solution-ledger.json` |
+| `updateCheck` | `true` | 面板顶部是否检查新版本 |
+| `updateCheckTtlMs` | `300000` | 一次检查结果复用多久。别调大，长了就看不见刚发布的版本 |
+| `updateCheckTimeoutMs` | `8000` | 单次 registry 查询的超时 |
+| `updateCheckPackage` | `'dsh-solution-ledger'` | 检查哪个包；改名 fork 时才需要动 |
+| `updateCheckRegistry` | `'https://registry.npmjs.org'` | 权威源，先查。发布在这里最先可见 |
+| `updateCheckMirror` | `'https://registry.npmmirror.com'` | 对照用的镜像；落后会被标出来。设为空字符串则跳过对照 |
+| `backupOnUpdate` | `true` | 跳转去更新前是否先备份当前版本 |
+| `backupPath` | `''` | 空则用 `$DSH_HOME/solution-ledger-backups` |
 
 ## 限制
 
@@ -151,6 +200,8 @@ Host 半为此注册了三条路由：`GET /solution-ledger/list`、`POST /solut
 - **界面不能新建条目。** 侧边栏面板可以查看、编辑、确认、弃用、归档和删除，但新增条目必须走 `solution_log`。
 - **单进程。** 存储是本地文件，两个 DSH 进程同时写会互相覆盖。
 - **`decision` 类不做自动推送。** 选技术路线不产生错误事件，这类条目只能靠 `solution_search` 主动查。
+- **更新检查不装、只报。** 点**去更新**只是跳到 Plugins 页；装不装、装哪个版本由那里的确认框决定。镜像滞后时，安装那一步仍可能要求你把源切到官方源。
+- **更新检查需要出网。** 查不到就是查不到，不会拿缓存冒充新结果——失败时明确显示失败原因。
 
 ## 许可证
 
