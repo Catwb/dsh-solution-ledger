@@ -132,6 +132,28 @@ git clone https://github.com/Catwb/dsh-solution-ledger.git
 
 Host 半为此注册了六条路由：`GET /solution-ledger/list`、`POST /solution-ledger/update`、`POST /solution-ledger/delete`、`GET /solution-ledger/update-check`、`POST /solution-ledger/backup`、`GET /solution-ledger/backups`。
 
+### 路由访问控制
+
+这六条路由监听在 loopback 上，用户浏览器里**任何一个网页**都能向 `127.0.0.1` 发请求。0.2.4 及之前的版本没有做访问校验，实测后果是：
+
+```
+无凭据 GET /list                        → 200，返回完整账本
+Origin: evil.example + cross-site 的 GET → 200，照样返回完整账本
+text/plain 的跨站 POST /delete           → 请求被处理（handler 自己回了 400）
+```
+
+浏览器会拦住跨域**读取**响应，但拦不住**写请求**——CSRF 简单请求不需要预检，任意网页都能清空账本。
+
+从 0.2.5 起，六条路由共用一个护栏（`lib/guard.js`），进入任何 handler 之前先过 `ctx.connection.requestRejection()`：
+
+- Host/Origin 围栏：挡 DNS rebinding 与跨站调用，`Sec-Fetch-Site: cross-site` 直接 403
+- 登录 cookie：过了围栏但没有认证的调用回 401
+- **拿不到 `connection` 服务时一律 403**（fail closed），检查自身抛错也按 403 处理
+
+被拒绝的响应只有 `unauthorized` / `forbidden` 两种纯文本，不带任何账本内容。
+
+## 更新检查
+
 ## 更新检查
 
 面板打开时会查一次自己有没有新版本。查到就在顶部显示一条提示，点**去更新**跳到 **Plugins** 页里这个插件的详情页，用那里的 **Update** 完成安装。插件自己**不装**——`updateBundle` 会先卸载旧版再装新版，而承载这个请求的正是被卸载的那个插件，中途断线是必然的。跳转过去用 DSH 原生的确认框、进度和失败回滚，比自己实现一遍可靠。
