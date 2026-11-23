@@ -32,6 +32,8 @@ dsh plugin --profile <profile 名> add github:Catwb/dsh-solution-ledger
 
 安装后侧边栏顶部图标排会多出一个账本图标。修改插件代码后，在 Plugins 页面关掉再打开以重新加载 Host 半；浏览器端还需要刷新页面。
 
+关闭这个插件时，侧边栏图标和面板会随 Host 半一起撤销，但**浏览器里已经加载的那份前端代码需要刷新页面才会消失**——这和插件的清理逻辑无关，是前端 bundle 的加载方式决定的。
+
 ### 本地开发
 
 ```bash
