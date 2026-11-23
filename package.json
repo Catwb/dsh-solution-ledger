@@ -4,7 +4,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Catwb/dsh-solution-ledger.git"
+    "url": "git+https://github.com/Catwb/dsh-solution-ledger.git"
   },
   "type": "module",
   "description": "Global problem-solving ledger: records troubleshooting and design decisions, searches them before debugging, and surfaces a matching entry when a tool fails. Managed from a sidebar drawer.",
