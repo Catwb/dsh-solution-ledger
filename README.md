@@ -59,6 +59,8 @@ git clone https://github.com/Catwb/dsh-solution-ledger.git
 
 ## 两个工具
 
+两个工具的 `parameters` 都是**标准 JSON Schema**（`type: 'object'` + `properties` + 字符串数组形式的 `required`）。原因是 DSH 会把它**原样**交给 provider，不做转换：写成裸属性表、或给属性加布尔 `required`，在严格 provider 上会让整轮请求直接失败并报 `Invalid schema for function 'solution_log'`。0.2.7 之前就是这个错误。
+
 ### `solution_log`
 
 写入一条记录。新条目默认 `draft`（草稿），**草稿不参与自动推送**，只有被确认为 `confirmed` 之后才会被自动带出。
