@@ -103,6 +103,42 @@ const dup = await run(log, {
 })
 console.log('[12] near-duplicate probe ->', JSON.stringify(dup.similar))
 
+// [13] supersedes: the new entry deprecates an *older, different* entry. This is
+// the one path where solution_log intentionally changes another entry.
+const sup = await run(log, {
+  kind: 'troubleshoot',
+  domain: 'environment',
+  title: 'pwsh 沙箱修复还要清一次 shell 缓存',
+  problem: '旧条目只写了补 ACL，重跑仍读到缓存的拒绝结果',
+  resolution: '补完 ACL 后清 shell 缓存再重跑受限命令',
+  supersedes: a.id,
+})
+console.log('\n[13] supersede ->', JSON.stringify(sup))
+
+const dep = await run(search, { status: 'deprecated', limit: 5 })
+console.log('[14] deprecated after supersede ->', dep.count, 'hit(s)')
+console.log('[15] old entry deprecation confirmed =', dep.entries.some((e) => e.id === a.id))
+
+try {
+  await run(log, {
+    kind: 'troubleshoot', domain: 'other', title: '指向不存在的取代目标',
+    problem: 'x', resolution: 'y', supersedes: 'no-such-id',
+  })
+  console.log('[16] missing supersedes target -> NOT rejected (bug)')
+} catch (error) {
+  console.log('[16] missing supersedes target ->', error.message)
+}
+
+try {
+  await run(log, {
+    kind: 'troubleshoot', domain: 'other', title: '自己取代自己应当被拒绝',
+    problem: 'x', resolution: 'y', replaces: c.id, supersedes: c.id,
+  })
+  console.log('[17] self-supersede -> NOT rejected (bug)')
+} catch (error) {
+  console.log('[17] self-supersede ->', error.message)
+}
+
 await disposer?.()
 await rm(dir, { recursive: true, force: true })
 console.log('\ndone')

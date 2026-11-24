@@ -96,8 +96,16 @@ git clone https://github.com/Catwb/dsh-solution-ledger.git
 | `platform` | 否 | 仅当条目与平台强相关时填 |
 | `status` | 否 | `draft`（默认）/ `confirmed` / `deprecated` |
 | `replaces` | 否 | 已有条目 id，原地更新而不是新增 |
+| `supersedes` | 否 | 另一条已有条目 id，本条目取代它（见下） |
 
 写入前会做一次近似探测，若有高度相似的条目会在结果里列出 id，提示用 `replaces` 合并。
+
+`replaces` 和 `supersedes` 不是一回事：
+
+- **`replaces`**：同一条记录被修正，旧内容原地覆盖，历史不留。
+- **`supersedes`**：旧条目作为历史留在账本里，状态置为 `deprecated`，停止参与自动推送和检索排序；面板里能看到「取代了 / 已被取代」的连线。
+
+判据是旧内容**说错了**还是**过时了**。说错了用 `replaces`（别攒垃圾），过时了用 `supersedes`（留个交代）。一条记录不能取代自己，也不能在自己身上同时用这两个指向同一个 id，这类调用会被直接拒绝。被取代的条目会在下一次写入时按与 `archiveAfterDays` 相同的规则归档，因此它从检索里消失，但不会从文件里消失。
 
 ### `solution_search`
 
@@ -132,6 +140,7 @@ git clone https://github.com/Catwb/dsh-solution-ledger.git
 - 搜索框 + 类型 / 状态筛选
 - 每条点开可展开：标题、问题、解法、否决方案、验证方式、标签，全部可直接编辑，失焦即保存
 - 状态操作：**确认**（草稿 → 已确认，只有确认过的才会参与自动推送）、退回草稿、弃用、归档、删除
+- 展开后若该条目有取代关系，顶部会显示「取代了 `<id>`」或「已被 `<id>` 取代」，只读
 - 顶部显示总数与各状态计数，底部显示存储文件的实际路径
 
 Host 半为此注册了六条路由：`GET /solution-ledger/list`、`POST /solution-ledger/update`、`POST /solution-ledger/delete`、`GET /solution-ledger/update-check`、`POST /solution-ledger/backup`、`GET /solution-ledger/backups`。
@@ -155,8 +164,6 @@ text/plain 的跨站 POST /delete           → 请求被处理（handler 自己
 - **拿不到 `connection` 服务时一律 403**（fail closed），检查自身抛错也按 403 处理
 
 被拒绝的响应只有 `unauthorized` / `forbidden` 两种纯文本，不带任何账本内容。
-
-## 更新检查
 
 ## 更新检查
 
