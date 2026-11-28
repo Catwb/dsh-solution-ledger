@@ -32,7 +32,11 @@ dsh plugin --profile <profile 名> add github:Catwb/dsh-solution-ledger
 
 安装后侧边栏顶部图标排会多出一个账本图标。修改插件代码后，在 Plugins 页面关掉再打开以重新加载 Host 半；浏览器端还需要刷新页面。
 
-关闭这个插件时，侧边栏图标和面板会随 Host 半一起撤销，但**浏览器里已经加载的那份前端代码需要刷新页面才会消失**——这和插件的清理逻辑无关，是前端 bundle 的加载方式决定的。
+关闭这个插件时，**面板的服务端路由会立即失效**——再打开面板会显示「插件已被关闭或未加载」，而不是读出旧数据。
+
+但**侧边栏图标不会立刻消失**。它由浏览器里已经加载的那份前端代码注册，而前端没有「插件被卸载」这样的事件可订阅（客户端只有 `slots/changed` / `locale/change` / `theme/change` / `connection/reset`）。插件这边的清理是写对的：`ctx.slots.inject` 的 controller 归属调用者 fiber，fiber 卸载时注册会被移除——问题只在于**宿主什么时候卸载这个 fiber**。生产中它通常要刷新页面才发生，所以关闭插件后图标残留到刷新为止是正常现象，不是清理逻辑漏了。
+
+如果你的场景要求「关闭即消失」，唯一可靠的做法是关闭后刷新页面。
 
 ### 本地开发
 
@@ -111,7 +115,11 @@ git clone https://github.com/Catwb/dsh-solution-ledger.git
 
 检索账本。`query` 可以是报错原文，也可以是你正在权衡的选项。
 
-打分权重（高到低）：`signals` 命中 → `tags` → `domain` → 标题词元 → 正文词元；平台不符扣分，跨目录的 `machine` 条目扣分，`deprecated` 大幅降权。
+打分权重（高到低）：`signals` 命中（5/条，上限 15）→ `tags`（3/条，上限 9）→ `problem` 词元（2/词，上限 8）→ 标题词元（2/词，上限 8）→ `resolution` / `rejected` 词元（1/词，上限 4）；平台不符扣分，跨目录的 `machine` 条目扣分，`deprecated` 大幅降权，`confirmed` +2。
+
+`problem` 单独占一档是有意的：`solution_log` 本来就要求你把症状按报错原样写进去，所以它比标题更接近报错本身。于是一条状态为 `confirmed`、`problem` 逐字抄了报错的条目，光靠自己就能到 10 分——刚好过默认门槛。`resolution` / `rejected` 留在最低档，因为它们描述的是解法，不能证明「这是同一个故障」。
+
+`includeArchived: true` 会把已归档的条目一起检索。归档只是移出默认检索，不是删除：被取代的条目会在下一次写入时归档，没有这个开关就再也查不到它。
 
 ## 自动推送
 
@@ -213,7 +221,7 @@ dsh plugin --profile <profile> 名 add file:<备份目录>
 | 键 | 默认 | 说明 |
 |---|---|---|
 | `pushOnToolError` | `true` | 工具失败时是否自动推送匹配条目 |
-| `pushMinScore` | `12` | 自动推送的最低相关度。低于它的匹配不打扰模型 |
+| `pushMinScore` | `10` | 自动推送的最低相关度。低于它的匹配不打扰模型 |
 | `maxEntries` | `2000` | 硬上限；超出后按更新时间删除最旧的**已归档**条目 |
 | `archiveAfterDays` | `90` | 超过这么多天未被命中的条目移出检索（不删除） |
 | `draftArchiveAfterDays` | `30` | 草稿且**从未被命中**，超过这么多天自动归档（不删除） |

@@ -6,8 +6,10 @@
       config:
         # Surface a matching confirmed entry when a tool call fails.
         pushOnToolError: true
-        # Minimum relevance score before an automatic note is attached.
-        pushMinScore: 12
+        # Minimum relevance score before an automatic note is attached. Ten keeps
+        # a verbatim `problem` plus `confirmed` sufficient on its own; a higher
+        # floor silently required two `signals` per entry.
+        pushMinScore: 10
         # Hard ceiling; the oldest archived entries are dropped past this.
         maxEntries: 2000
         # Entries untouched for this many days are archived out of search.
