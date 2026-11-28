@@ -83,6 +83,8 @@ Web 的 **Plugins** 页点 Add 填包名也可以。装好后侧边栏顶部多�
 
 `$DSH_HOME/solution-ledger.json`（`statePath` 可覆盖）。临时文件 + rename 原子写；文件损坏时以空库启动而不是让插件挂掉。计数只在内存累加，每 30 秒批量落盘。
 
+**归档维护不跑定时器**：它挂在下一次 `solution_log` 写入上，面板里的编辑、确认、归档都不会触发。所以 `archiveAfterDays` / `draftArchiveAfterDays` 是「写入时判定」的条件，不是后台任务——一个长期没有新记录的账本，超期条目会一直留在原位，直到下一次 `solution_log`。
+
 ## 界面
 
 侧边栏图标排里的账本图标（`order: 30`）打开中央面板：
