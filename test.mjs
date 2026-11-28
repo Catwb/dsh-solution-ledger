@@ -1,6 +1,7 @@
 import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { Readable } from 'node:stream'
 import { apply } from './lib/index.js'
 
 const dir = await mkdtemp(join(tmpdir(), 'sl-'))
@@ -8,13 +9,29 @@ const statePath = join(dir, 'ledger.json')
 
 const defs = new Map()
 const hooks = []
+const routes = new Map()
 let disposer
+
+/** Minimal Web carrier, so the HTTP half registers its routes for testing. */
+const webServer = {
+  register: (route) => {
+    routes.set(route.path, route.handler)
+    return () => routes.delete(route.path)
+  },
+}
+
+/** Trusted caller: the fence itself is covered by check-guard.mjs. */
+const connection = { requestRejection: () => undefined }
+
 const ctx = {
   tools: { register: (def) => { defs.set(def.name, def); return () => defs.delete(def.name) } },
   on: (event, fn) => { hooks.push({ event, fn }); return () => {} },
   effect: (fn) => { disposer = fn(); return () => {} },
-  // No web server in this harness: the browser routes are optional.
-  get: () => undefined,
+  get: (name) => {
+    if (name === 'webServer') return webServer
+    if (name === 'connection') return connection
+    return undefined
+  },
 }
 
 await apply(ctx, { statePath, pushOnToolError: true, pushMinScore: 4 })
@@ -24,6 +41,42 @@ const log = defs.get('solution_log')
 const search = defs.get('solution_search')
 const agent = { id: 'sess-1', session: { header: { cwd: 'D:\\work' } } }
 const run = (def, args) => def.execute(args, { agent, signal: { aborted: false } })
+
+/**
+ * Invoke one registered route the way the Web carrier would.
+ * @param path - absolute route path.
+ * @param method - HTTP method.
+ * @param body - JSON body for POST, omitted for GET.
+ * @returns the status and the parsed payload.
+ */
+async function callRoute(path, method, body) {
+  const handler = routes.get(path)
+  if (typeof handler !== 'function') throw new Error(`route ${path} is not registered`)
+  const req = Readable.from(body === undefined ? [] : [Buffer.from(JSON.stringify(body), 'utf8')])
+  req.method = method
+  req.url = path
+  req.headers = { host: '127.0.0.1:14559' }
+  const res = {
+    headersSent: false,
+    status: 0,
+    body: '',
+    writeHead(status) {
+      this.status = status
+      this.headersSent = true
+    },
+    end(text) {
+      this.body = text ?? ''
+    },
+  }
+  await handler(req, res)
+  return { status: res.status, json: res.body === '' ? null : JSON.parse(res.body) }
+}
+
+/** Read one entry back through the list route. */
+async function readBack(id) {
+  const { json } = await callRoute('/solution-ledger/list', 'GET')
+  return json.entries.find((entry) => entry.id === id) ?? null
+}
 
 const a = await run(log, {
   kind: 'troubleshoot',
@@ -138,6 +191,59 @@ try {
 } catch (error) {
   console.log('[17] self-supersede ->', error.message)
 }
+
+// The archive button shipped broken because nothing asserted this matrix: every
+// case below is a combination that once did the wrong thing.
+console.log('\n=== route: /update archive matrix ===')
+const z = await run(log, {
+  kind: 'troubleshoot',
+  domain: 'other',
+  title: '归档矩阵测试条目',
+  problem: 'archive matrix probe',
+  resolution: 'n/a',
+})
+
+/** Apply one patch, read the row back, and report whether it landed. */
+const step = async (label, patch, check) => {
+  const answer = await callRoute('/solution-ledger/update', 'POST', { id: z.id, patch })
+  const row = await readBack(z.id)
+  console.log(`${label} ->`, check(row, answer) ? 'ok' : `FAIL ${JSON.stringify(row)}`)
+}
+
+await step('[R1] archive a draft', { archived: true }, (row) => row.archived === true)
+await step('[R2] text edit keeps archive', { problem: 'probe (edited)' }, (row) => row.archived === true)
+await step('[R3] confirm clears archive', { status: 'confirmed' }, (row) => row.status === 'confirmed' && row.archived === false)
+await step('[R4] explicit archive wins over confirm', { status: 'confirmed', archived: true }, (row) => row.archived === true)
+await step('[R5] unarchive', { archived: false }, (row) => row.archived === false)
+
+console.log('\n=== route: confirming an entry severs its supersede link ===')
+const oldOne = await run(log, {
+  kind: 'troubleshoot',
+  domain: 'other',
+  title: '被取代的旧条目',
+  problem: 'old',
+  resolution: 'old fix',
+})
+const newOne = await run(log, {
+  kind: 'troubleshoot',
+  domain: 'other',
+  title: '取代旧条目的新条目',
+  problem: 'new',
+  resolution: 'new fix',
+  supersedes: oldOne.id,
+})
+console.log('[R6] supersede deprecates the old entry ->', (await readBack(oldOne.id)).status === 'deprecated' ? 'ok' : 'FAIL')
+
+const revive = await callRoute('/solution-ledger/update', 'POST', { id: oldOne.id, patch: { status: 'confirmed' } })
+const revived = await readBack(oldOne.id)
+const superseder = await readBack(newOne.id)
+console.log('[R7] confirm revives the old entry ->', revived.status === 'confirmed' ? 'ok' : 'FAIL')
+console.log(
+  '[R8] supersede link cleared ->',
+  superseder.supersedes === null && revive.json.unlinked === newOne.id
+    ? 'ok'
+    : `FAIL ${JSON.stringify({ supersedes: superseder.supersedes, unlinked: revive.json.unlinked })}`,
+)
 
 await disposer?.()
 await rm(dir, { recursive: true, force: true })
