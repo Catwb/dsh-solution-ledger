@@ -62,7 +62,34 @@ console.log('\n--- a missing connection fails closed ---')
   const guard = createGuard(undefined)
   const res = fakeResponse()
   expect('returns true (stop)', guard(request, res), true)
-  expect('status 403', res.record.status, 403)
+  expect('status 503', res.record.status, 503)
+}
+
+// The reported bug: connection registers after an await, so a plugin applied
+// first held `undefined` forever and every request was refused. A resolver must
+// be re-read per request so the fence converges on its own.
+console.log('\n--- a late-registering connection is picked up per request ---')
+{
+  let connection
+  const guard = createGuard(() => connection)
+  const first = fakeResponse()
+  expect('refused while absent', guard(request, first), true)
+  expect('status 503 while absent', first.record.status, 503)
+  connection = { requestRejection: () => 401 }
+  const second = fakeResponse()
+  expect('reaches the service once it exists', guard(request, second), true)
+  expect('status 401 once it exists', second.record.status, 401)
+  expect('body once it exists', second.record.body, 'unauthorized')
+}
+
+console.log('\n--- a throwing resolver fails closed ---')
+{
+  const guard = createGuard(() => {
+    throw new Error('nope')
+  })
+  const res = fakeResponse()
+  expect('returns true (stop)', guard(request, res), true)
+  expect('status 503', res.record.status, 503)
 }
 
 console.log('\n--- a throwing check fails closed ---')
